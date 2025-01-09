@@ -1,18 +1,52 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useScroll, useTransform, motion, useInView } from "framer-motion";
+import { useScroll, useTransform, motion } from "framer-motion";
+import { useInView } from "react-intersection-observer";
 
 interface TimelineEntry {
   title: string;
   content: React.ReactNode;
 }
 
+interface TimelineEntryProps {
+  title: string;
+  content: React.ReactNode;
+  inViewRef: (node?: Element | null) => void;
+  inView: boolean;
+}
+
+const TimelineEntry = ({ title, content, inViewRef, inView }: TimelineEntryProps) => (
+  <div
+    className="flex justify-start pt-6 md:pt-24 md:gap-10"
+    ref={inViewRef}
+  >
+    <div className="sticky flex flex-col md:flex-row z-40 items-center top-28 self-start max-w-xs lg:max-w-sm md:w-full">
+      <motion.div
+        className="h-5 w-5 absolute left-2 md:left-2 rounded-full flex items-center justify-center"
+        style={{
+          background: inView
+            ? "linear-gradient(to right, #a855f7, #3b82f6, #14b8a6)"
+            : "#737373",
+          boxShadow: inView ? "0 0 8px rgba(168, 85, 247, 0.7)" : "none",
+        }}
+      />
+      <h3 className="hidden md:block text-xl md:pl-20 md:text-4xl font-bold text-neutral-500 dark:text-neutral-500">
+        {title}
+      </h3>
+    </div>
+
+    <div className="relative pl-20 pr-4 md:pl-6 w-full">
+      <h3 className="md:hidden block text-2xl mb-4 text-left font-bold text-neutral-500 dark:text-neutral-500">
+        {title}
+      </h3>
+      {content}
+    </div>
+  </div>
+);
+
 export const Timeline = ({ data }: { data: TimelineEntry[] }) => {
   const ref = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(0);
-  const checkpointRefs = useRef<React.RefObject<HTMLDivElement>[]>(
-    data.map(() => React.createRef())
-  );
 
   useEffect(() => {
     if (ref.current) {
@@ -29,6 +63,16 @@ export const Timeline = ({ data }: { data: TimelineEntry[] }) => {
   const heightTransform = useTransform(scrollYProgress, [0, 1], [0, height]);
   const opacityTransform = useTransform(scrollYProgress, [0, 0.1], [0, 1]);
 
+  // Generate refs and inView state for each timeline entry
+  const refsAndInView = data.map(() => {
+    const [inViewRef, inView] = useInView({
+      threshold: 0.1,
+      rootMargin: "0px 0px -80% 0px",
+      triggerOnce: true,
+    });
+    return { inViewRef, inView };
+  });
+
   return (
     <div className="w-full bg-#000319 font-sans md:px-6 mb-28" ref={containerRef}>
       <div className="max-w-7xl mx-auto py-10 px-4 md:px-6 lg:px-8">
@@ -39,40 +83,15 @@ export const Timeline = ({ data }: { data: TimelineEntry[] }) => {
 
       <div ref={ref} className="relative max-w-7xl mx-auto pb-12">
         {data.map((item, index) => {
-          const isInView = useInView(checkpointRefs.current[index], {
-            margin: "0px 0px -80% 0px",
-          });
-
+          const { inViewRef, inView } = refsAndInView[index];
           return (
-            <div
+            <TimelineEntry
               key={index}
-              className="flex justify-start pt-6 md:pt-24 md:gap-10"
-              ref={checkpointRefs.current[index]}
-            >
-              <div className="sticky flex flex-col md:flex-row z-40 items-center top-28 self-start max-w-xs lg:max-w-sm md:w-full">
-                <motion.div
-                  className="h-5 w-5 absolute left-2 md:left-2 rounded-full flex items-center justify-center"
-                  style={{
-                    background: isInView
-                      ? "linear-gradient(to right, #a855f7, #3b82f6, #14b8a6)"
-                      : "#737373",
-                    boxShadow: isInView
-                      ? "0 0 8px rgba(168, 85, 247, 0.7)"
-                      : "none",
-                  }}
-                />
-                <h3 className="hidden md:block text-xl md:pl-20 md:text-4xl font-bold text-neutral-500 dark:text-neutral-500">
-                  {item.title}
-                </h3>
-              </div>
-
-              <div className="relative pl-20 pr-4 md:pl-6 w-full">
-                <h3 className="md:hidden block text-2xl mb-4 text-left font-bold text-neutral-500 dark:text-neutral-500">
-                  {item.title}
-                </h3>
-                {item.content}
-              </div>
-            </div>
+              title={item.title}
+              content={item.content}
+              inViewRef={inViewRef}
+              inView={inView}
+            />
           );
         })}
         <div

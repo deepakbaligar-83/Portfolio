@@ -9,3 +9,7 @@ node_modules/
 
 # Ignore all .DS_Store files (macOS specific)
 .DS_Store
+.vercel
+
+# Sentry Config File
+.env.sentry-build-plugin
