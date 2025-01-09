@@ -121,7 +121,7 @@ const Clients = () => {
         <div>
           <h1 className="text-xl md:text-2xl font-bold">Pre-University</h1>
           <p className="text-sm md:text-lg mt-2">
-            Completed Pre-University education in Science at Dr. R. B. Patil's
+            Completed Pre-University education in Science at Dr. R. B. Patil&aposs
             Mahesh PU College.
           </p>
         </div>
